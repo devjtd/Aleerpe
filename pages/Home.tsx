@@ -22,9 +22,9 @@ export const Home: React.FC = () => {
         />
         <div className="absolute bottom-0 left-0 w-full p-8 z-20 container mx-auto">
           <span className="bg-[#C0392B] text-white px-2 py-1 text-xs font-bold uppercase rounded mb-3 inline-block">{t('hero_featured')}</span>
-          <h1 className="text-4xl md:text-6xl font-black text-white mb-2 drop-shadow-lg font-serif">EL HIJO MENOR <br />DEL MAESTRO ESPADA</h1>
+          <h1 className="text-4xl md:text-6xl font-black text-white mb-2 drop-shadow-lg font-serif">{t('home_hero_title')}</h1>
           <p className="text-gray-200 max-w-2xl line-clamp-2 mb-6">
-            Una historia de redención y poder absoluto. Sigue el viaje del guerrero más fuerte en su búsqueda por reclamar su derecho de nacimiento.
+            {t('home_hero_desc')}
           </p>
           <button
             onClick={() => navigate('/manga/1')}
@@ -50,10 +50,10 @@ export const Home: React.FC = () => {
           <img src="https://picsum.photos/id/338/1200/400" className="w-full h-48 object-cover grayscale" alt="Crowdfunding" />
           <div className="absolute inset-0 z-20 flex items-center justify-between px-8 md:px-16">
             <div>
-              <span className="bg-yellow-400 text-black text-xs font-black px-2 py-1 uppercase rounded mb-2 inline-block">Crowdfunding</span>
-              <h2 className="text-white text-2xl md:text-3xl font-black italic">APOYA A LOS CREADORES</h2>
+              <span className="bg-yellow-400 text-black text-xs font-black px-2 py-1 uppercase rounded mb-2 inline-block">{t('home_crowdfunding_tag')}</span>
+              <h2 className="text-white text-2xl md:text-3xl font-black italic">{t('home_crowdfunding_title')}</h2>
               <p className="text-gray-200 text-sm md:text-base max-w-lg hidden md:block">
-                Participa en la financiación de "Nuestro Mundo en Estéreo" y obtén recompensas exclusivas.
+                {t('home_crowdfunding_desc')}
               </p>
             </div>
             <div className="bg-white text-black rounded-full p-4 group-hover:scale-110 transition-transform">
@@ -68,7 +68,7 @@ export const Home: React.FC = () => {
         <div className="w-full h-24 bg-gradient-to-r from-blue-900 to-indigo-900 rounded-lg flex items-center justify-center relative overflow-hidden shadow-inner">
           <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
           <h2 className="text-white text-xl md:text-2xl font-bold italic relative z-10">
-            TRIDENT CON TU SERIE FAVORITA <span className="text-yellow-400">¡PRUÉBALOS TODOS!</span>
+            {t('home_ad_banner')} <span className="text-yellow-400">{t('home_ad_banner_cta')}</span>
           </h2>
         </div>
       </div>

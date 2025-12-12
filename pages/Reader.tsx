@@ -2,8 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, ChevronLeft, ChevronRight, List, Settings, Globe, Sparkles, X, Lock, Volume2, Square, Headphones, Play, Pause, SkipBack, SkipForward, Loader2 } from 'lucide-react';
-import { MOCK_AUDIO_SCRIPTS } from '../constants';
-import { translateMangaPage } from '../services/geminiService';
+import { translateMangaPage, translateChapterForAudio } from '../services/geminiService';
 import { TranslationResult, AudioSegment } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useManga } from '../contexts/MangaContext';
@@ -26,7 +25,7 @@ export const Reader: React.FC = () => {
     const navigate = useNavigate();
     const { mangas, getChapters } = useManga();
     const { user, isAuthenticated, consumeToken } = useAuth();
-    const { language } = useLanguage();
+    const { language, t } = useLanguage();
 
     // Get manga and chapter data
     const manga = mangas.find(m => m.id === id) || mangas[0];
@@ -98,35 +97,30 @@ export const Reader: React.FC = () => {
         setIsGeneratingAudio(true);
         setAudioAnalysisProgress(0);
 
-        // Simulate Scanning Process
-        const scanInterval = setInterval(() => {
-            setAudioAnalysisProgress(prev => {
-                if (prev >= 90) {
-                    clearInterval(scanInterval);
-                    return 90;
-                }
-                return prev + 10;
-            });
-        }, 300);
+        try {
+            // Use real AI translation for chapter audio
+            const translatedSegments = await translateChapterForAudio(
+                chapterPages,
+                language,
+                (progress) => setAudioAnalysisProgress(progress)
+            );
 
-        // Simulate API "Analysis" delay
-        await new Promise(resolve => setTimeout(resolve, 3000));
+            if (translatedSegments.length === 0) {
+                throw new Error('No audio segments generated');
+            }
 
-        clearInterval(scanInterval);
-        setAudioAnalysisProgress(100);
+            setAudioPlaylist(translatedSegments);
+            setCurrentAudioIndex(0);
+            setIsGeneratingAudio(false);
+            setShowAudioPlayer(true);
 
-        // Select the script based on the CURRENT APP LANGUAGE
-        // In a real app, this would trigger an AI Translation job for the whole chapter
-        const selectedScript = MOCK_AUDIO_SCRIPTS[language] || MOCK_AUDIO_SCRIPTS['es'];
-        setAudioPlaylist(selectedScript);
-        setCurrentAudioIndex(0);
-
-        await new Promise(resolve => setTimeout(resolve, 500)); // Small delay for UI
-        setIsGeneratingAudio(false);
-        setShowAudioPlayer(true);
-        
-        // Start playing with the correct language list
-        playSegment(0, selectedScript);
+            // Start playing
+            playSegment(0, translatedSegments);
+        } catch (error) {
+            console.error('Audio generation error:', error);
+            setIsGeneratingAudio(false);
+            // Could show error modal here
+        }
     };
 
     const playSegment = (index: number, playlist: AudioSegment[]) => {
@@ -237,10 +231,10 @@ export const Reader: React.FC = () => {
             const imageUrl = chapterPages[currentPage];
             const base64 = await urlToBase64(imageUrl);
 
-            const results = await translateMangaPage(base64, 'Spanish');
+            const results = await translateMangaPage(base64, language);
             setTranslations(results);
         } catch (error) {
-            setCurrentTranslationError("Failed to translate page. Please check API Key or try again.");
+            setCurrentTranslationError(t('reader_translation_error'));
         } finally {
             setIsTranslating(false);
         }
@@ -257,13 +251,13 @@ export const Reader: React.FC = () => {
                         className="hover:text-white transition-colors flex items-center gap-1 text-sm font-medium"
                     >
                         <ArrowLeft size={18} />
-                        <span className="hidden sm:inline">VOLVER</span>
+                        <span className="hidden sm:inline">{t('reader_back')}</span>
                     </button>
                     <div className="h-4 w-px bg-gray-600 mx-2"></div>
                     <h1 className="font-bold text-white truncate max-w-[150px] sm:max-w-md">
                         {manga.title}
                     </h1>
-                    <span className="text-xs bg-gray-700 px-2 py-0.5 rounded text-gray-300">Capítulo 1</span>
+                    <span className="text-xs bg-gray-700 px-2 py-0.5 rounded text-gray-300">{t('reader_chapter')} 1</span>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -274,11 +268,11 @@ export const Reader: React.FC = () => {
                         className="hidden md:flex items-center gap-2 bg-indigo-900/50 hover:bg-indigo-800 text-indigo-200 px-3 py-1.5 rounded-full text-xs font-bold transition-all border border-indigo-700"
                     >
                         <Headphones size={14} />
-                        Escuchar Capítulo
+                        {t('reader_listen')}
                     </button>
 
                     <div className="hidden sm:flex items-center gap-2 mr-4 bg-black/30 px-3 py-1 rounded-full text-xs ml-2">
-                        <span>Página {currentPage + 1} / {chapterPages.length}</span>
+                        <span>{t('reader_page')} {currentPage + 1} / {chapterPages.length}</span>
                     </div>
 
                     <button
@@ -289,7 +283,7 @@ export const Reader: React.FC = () => {
                             }`}
                     >
                         {isAuthenticated && user?.tokens === 0 ? <Lock size={12} /> : <Sparkles size={14} />}
-                        {isTranslating ? 'Traduciento...' : 'AI Traducir'}
+                        {isTranslating ? t('reader_translating') : t('reader_translate')}
                         {isAuthenticated && <span className="bg-black/40 px-1.5 rounded-full text-[10px] ml-1">{user?.tokens}</span>}
                     </button>
                 </div>
@@ -311,7 +305,7 @@ export const Reader: React.FC = () => {
                         {/* Overlay Hints */}
                         {translationPanelOpen && !isTranslating && translations.length > 0 && (
                             <div className="absolute top-4 right-4 bg-black/70 backdrop-blur text-white text-xs px-3 py-1 rounded-full border border-white/20 animate-pulse">
-                                Traducción disponible en panel lateral 👉
+                                {t('reader_translation_available')}
                             </div>
                         )}
                     </div>
@@ -326,7 +320,7 @@ export const Reader: React.FC = () => {
                         <div className="p-4 border-b border-gray-700 flex justify-between items-center bg-[#252525]">
                             <div className="flex items-center gap-2 text-white">
                                 <Globe size={18} className="text-[#C0392B]" />
-                                <h3 className="font-bold">Traducción AI</h3>
+                                <h3 className="font-bold">{t('reader_translation_ai')}</h3>
                             </div>
                             <button onClick={() => setTranslationPanelOpen(false)} className="text-gray-400 hover:text-white">
                                 <X size={20} />
@@ -337,7 +331,7 @@ export const Reader: React.FC = () => {
                             {isTranslating ? (
                                 <div className="flex flex-col items-center justify-center h-40 space-y-4">
                                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C0392B]"></div>
-                                    <p className="text-sm text-gray-400 animate-pulse">Analizando texto...</p>
+                                    <p className="text-sm text-gray-400 animate-pulse">{t('reader_analyzing')}</p>
                                 </div>
                             ) : currentTranslationError ? (
                                 <div className="p-4 bg-red-900/20 border border-red-800 rounded text-red-200 text-sm text-center">
@@ -345,22 +339,22 @@ export const Reader: React.FC = () => {
                                 </div>
                             ) : translations.length === 0 ? (
                                 <div className="text-center text-gray-500 py-10 px-4">
-                                    <p className="mb-2">No hay traducciones aún.</p>
-                                    <p className="text-xs">Pulsa "AI Traducir" para detectar y traducir el texto de esta página.</p>
+                                    <p className="mb-2">{t('reader_no_translation')}</p>
+                                    <p className="text-xs">{t('reader_no_translation_hint')}</p>
                                 </div>
                             ) : (
-                                translations.map((t, idx) => (
+                                translations.map((tr, idx) => (
                                     <div key={idx} className="bg-[#2A2A2A] rounded-lg p-3 border border-gray-700 hover:border-gray-500 transition-colors group">
                                         <div className="flex justify-between items-start mb-1">
-                                            {t.speaker && t.speaker !== 'Unknown' && (
+                                            {tr.speaker && tr.speaker !== 'Unknown' && (
                                                 <div className="text-xs font-bold text-[#C0392B] uppercase tracking-wider">
-                                                    {t.speaker}
+                                                    {tr.speaker}
                                                 </div>
                                             )}
                                         </div>
 
                                         <p className="text-white text-sm leading-relaxed font-medium">
-                                            {t.translatedText}
+                                            {tr.translatedText}
                                         </p>
                                     </div>
                                 ))
@@ -379,8 +373,8 @@ export const Reader: React.FC = () => {
                             <div className="absolute inset-0 border-4 border-indigo-500 rounded-full border-t-transparent animate-spin"></div>
                             <Headphones className="absolute inset-0 m-auto text-indigo-400" size={24} />
                         </div>
-                        <h3 className="text-xl font-bold text-white mb-2">Analizando Capítulo</h3>
-                        <p className="text-gray-400 text-sm mb-4">Transcribiendo texto y generando audio...</p>
+                        <h3 className="text-xl font-bold text-white mb-2">{t('reader_analyzing_chapter')}</h3>
+                        <p className="text-gray-400 text-sm mb-4">{t('reader_transcribing')}</p>
 
                         {/* Progress Bar */}
                         <div className="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
@@ -403,8 +397,8 @@ export const Reader: React.FC = () => {
                                 <Headphones size={16} />
                             </div>
                             <div>
-                                <h4 className="text-white font-bold text-sm">Reproduciendo Capítulo</h4>
-                                <p className="text-xs text-gray-400">Página {currentAudioIndex + 1} • <span className="uppercase">{language}</span></p>
+                                <h4 className="text-white font-bold text-sm">{t('reader_playing')}</h4>
+                                <p className="text-xs text-gray-400">{t('reader_page')} {currentAudioIndex + 1} • <span className="uppercase">{language}</span></p>
                             </div>
                         </div>
                         <button onClick={closeAudioPlayer} className="text-gray-500 hover:text-white">
@@ -450,12 +444,12 @@ export const Reader: React.FC = () => {
                     className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded hover:bg-[#C0392B] disabled:opacity-50 disabled:hover:bg-gray-800 transition-colors text-sm font-bold text-white"
                 >
                     <ChevronLeft size={16} />
-                    <span className="hidden sm:inline">Capítulo anterior</span>
+                    <span className="hidden sm:inline">{t('reader_prev_chapter')}</span>
                 </button>
 
                 <button className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
                     <List size={24} />
-                    <span className="hidden sm:inline text-sm">Episodios</span>
+                    <span className="hidden sm:inline text-sm">{t('reader_episodes')}</span>
                 </button>
 
                 <button
@@ -463,7 +457,7 @@ export const Reader: React.FC = () => {
                     onClick={() => setCurrentPage(prev => Math.min(chapterPages.length - 1, prev + 1))}
                     className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded hover:bg-[#C0392B] disabled:opacity-50 disabled:hover:bg-gray-800 transition-colors text-sm font-bold text-white"
                 >
-                    <span className="hidden sm:inline">Capítulo siguiente</span>
+                    <span className="hidden sm:inline">{t('reader_next_chapter')}</span>
                     <ChevronRight size={16} />
                 </button>
             </footer>
@@ -475,16 +469,16 @@ export const Reader: React.FC = () => {
                         <div className="bg-gray-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                             <Lock className="text-[#C0392B]" size={32} />
                         </div>
-                        <h3 className="text-xl font-bold text-white mb-2">Inicia sesión para usar IA</h3>
+                        <h3 className="text-xl font-bold text-white mb-2">{t('reader_login_title')}</h3>
                         <p className="text-gray-400 text-sm mb-6">
-                            Las funciones de Traducción y Audio IA son exclusivas para miembros.
+                            {t('reader_login_desc')}
                         </p>
                         <div className="flex flex-col gap-3">
                             <Link to="/login" className="bg-[#C0392B] text-white font-bold py-3 rounded-lg hover:bg-[#A93226] transition-colors">
-                                Iniciar Sesión
+                                {t('reader_login_btn')}
                             </Link>
                             <button onClick={() => setShowLoginModal(false)} className="text-gray-500 hover:text-gray-300 font-bold text-sm">
-                                Cancelar
+                                {t('reader_cancel')}
                             </button>
                         </div>
                     </div>
@@ -498,16 +492,16 @@ export const Reader: React.FC = () => {
                         <div className="bg-yellow-900/30 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                             <Sparkles className="text-yellow-500" size={32} />
                         </div>
-                        <h3 className="text-xl font-bold text-white mb-2">¡Te has quedado sin tokens!</h3>
+                        <h3 className="text-xl font-bold text-white mb-2">{t('reader_tokens_title')}</h3>
                         <p className="text-gray-400 text-sm mb-6">
-                            Has utilizado todas tus interacciones IA gratuitas. Adquiere un plan Premium para uso ilimitado.
+                            {t('reader_tokens_desc')}
                         </p>
                         <div className="flex flex-col gap-3">
                             <Link to="/pricing" className="bg-yellow-600 text-white font-bold py-3 rounded-lg hover:bg-yellow-700 transition-colors">
-                                Obtener Tokens
+                                {t('reader_tokens_btn')}
                             </Link>
                             <button onClick={() => setShowTokenModal(false)} className="text-gray-500 hover:text-gray-300 font-bold text-sm">
-                                Cancelar
+                                {t('reader_cancel')}
                             </button>
                         </div>
                     </div>

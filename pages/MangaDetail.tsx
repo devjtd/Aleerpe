@@ -74,11 +74,11 @@ export const MangaDetail: React.FC = () => {
                                 className="w-full bg-[#C0392B] text-white font-bold py-3 rounded-lg shadow-lg hover:bg-[#A93226] transition-all flex items-center justify-center gap-2"
                             >
                                 <BookOpen size={20} />
-                                LEER PRIMERO
+                                {t('detail_read_first')}
                             </button>
                             <button className="w-full bg-white text-gray-700 border border-gray-300 font-bold py-3 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
                                 <Bookmark size={20} />
-                                GUARDAR EN LISTA
+                                {t('detail_save_list')}
                             </button>
                         </div>
                     </div>
@@ -101,11 +101,11 @@ export const MangaDetail: React.FC = () => {
                                 </div>
                                 <div className="flex items-center gap-1 text-gray-500">
                                     <Eye size={18} />
-                                    <span>1.2M Vistas</span>
+                                    <span>1.2M {t('detail_views')}</span>
                                 </div>
                                 <div className="flex items-center gap-1 text-gray-500">
                                     <Bookmark size={18} />
-                                    <span>45k Seguidos</span>
+                                    <span>45k {t('detail_followers')}</span>
                                 </div>
                             </div>
 
@@ -124,7 +124,7 @@ export const MangaDetail: React.FC = () => {
                                     onClick={() => navigate(`/reader/${manga.id}`)}
                                     className="flex-1 bg-[#C0392B] text-white font-bold py-3 rounded-lg shadow-lg flex items-center justify-center gap-2"
                                 >
-                                    <BookOpen size={20} /> LEER
+                                    <BookOpen size={20} /> {t('detail_read')}
                                 </button>
                                 <button className="bg-gray-100 text-gray-700 p-3 rounded-lg">
                                     <Bookmark size={24} />
@@ -141,14 +141,14 @@ export const MangaDetail: React.FC = () => {
                                 onClick={() => setActiveTab('chapters')}
                                 className={`pb-3 text-lg font-bold transition-colors relative ${activeTab === 'chapters' ? 'text-[#C0392B]' : 'text-gray-400 hover:text-gray-600'}`}
                             >
-                                Capítulos
+                                {t('detail_chapters_tab')}
                                 {activeTab === 'chapters' && <div className="absolute bottom-0 left-0 w-full h-1 bg-[#C0392B] rounded-t-full"></div>}
                             </button>
                             <button
                                 onClick={() => setActiveTab('info')}
                                 className={`pb-3 text-lg font-bold transition-colors relative ${activeTab === 'info' ? 'text-[#C0392B]' : 'text-gray-400 hover:text-gray-600'}`}
                             >
-                                Sinopsis
+                                {t('detail_synopsis_tab')}
                                 {activeTab === 'info' && <div className="absolute bottom-0 left-0 w-full h-1 bg-[#C0392B] rounded-t-full"></div>}
                             </button>
                         </div>
@@ -157,22 +157,22 @@ export const MangaDetail: React.FC = () => {
                         {activeTab === 'info' ? (
                             <div className="bg-gray-50 p-6 rounded-xl border border-gray-100 animate-fade-in">
                                 <p className={`text-gray-700 leading-relaxed text-lg ${!isDescExpanded ? 'line-clamp-4' : ''}`}>
-                                    {manga.description || "Sin descripción disponible."}
+                                    {manga.description || t('detail_no_description')}
                                 </p>
                                 <button
                                     onClick={() => setIsDescExpanded(!isDescExpanded)}
                                     className="text-[#C0392B] font-bold mt-2 flex items-center gap-1 text-sm hover:underline"
                                 >
-                                    {isDescExpanded ? 'Leer menos' : 'Leer más'} <ChevronDown size={16} className={`transform transition-transform ${isDescExpanded ? 'rotate-180' : ''}`} />
+                                    {isDescExpanded ? t('detail_read_less') : t('detail_read_more')} <ChevronDown size={16} className={`transform transition-transform ${isDescExpanded ? 'rotate-180' : ''}`} />
                                 </button>
                             </div>
                         ) : (
                             <div className="space-y-3 animate-fade-in">
                                 {/* List Header */}
                                 <div className="flex justify-between items-center text-xs text-gray-400 uppercase font-bold tracking-wider px-2">
-                                    <span>{chapters.length} Capítulos</span>
+                                    <span>{chapters.length} {t('detail_chapters_count')}</span>
                                     <span className="flex items-center gap-1 cursor-pointer hover:text-gray-600">
-                                        Ordenar <ChevronDown size={14} />
+                                        {t('detail_sort')} <ChevronDown size={14} />
                                     </span>
                                 </div>
 
@@ -203,10 +203,10 @@ export const MangaDetail: React.FC = () => {
 
                                             <div className="flex items-center gap-2">
                                                 {chapter.isRead ? (
-                                                    <span className="text-xs font-bold bg-gray-200 text-gray-500 px-2 py-1 rounded">LEÍDO</span>
+                                                    <span className="text-xs font-bold bg-gray-200 text-gray-500 px-2 py-1 rounded">{t('detail_read_status')}</span>
                                                 ) : (
                                                     <span className="opacity-0 group-hover:opacity-100 bg-[#C0392B] text-white text-xs font-bold px-3 py-1 rounded transition-opacity">
-                                                        LEER
+                                                        {t('detail_read_action')}
                                                     </span>
                                                 )}
                                             </div>
@@ -214,7 +214,7 @@ export const MangaDetail: React.FC = () => {
                                     ))}
                                 </div>
                                 <button className="w-full py-3 mt-4 text-gray-500 font-bold text-sm hover:text-gray-800 hover:bg-gray-100 rounded transition-colors">
-                                    Ver más capítulos anteriores...
+                                    {t('detail_more_chapters')}
                                 </button>
                             </div>
                         )}
@@ -226,7 +226,7 @@ export const MangaDetail: React.FC = () => {
                     <div className="border-t border-gray-200 pt-10 mt-10">
                         <div className="flex items-center gap-2 mb-8 border-l-4 border-[#C0392B] pl-4">
                             <h2 className="text-2xl font-bold text-gray-800">
-                                Recomendaciones <span className="font-light text-gray-500">similares</span>
+                                {t('detail_recommendations')} <span className="font-light text-gray-500">{t('detail_similar')}</span>
                             </h2>
                             <Sparkles className="text-yellow-400" size={20} />
                         </div>
