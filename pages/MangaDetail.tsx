@@ -193,7 +193,7 @@ export const MangaDetail: React.FC = () => {
                                                 </span>
                                                 <div>
                                                     <h4 className={`font-medium ${chapter.isRead ? 'text-gray-500' : 'text-gray-900'}`}>
-                                                        {chapter.title}
+                                                        {t('reader_chapter')} {chapter.number}
                                                     </h4>
                                                     <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
                                                         <span className="flex items-center gap-1"><Calendar size={12} /> {chapter.date}</span>
